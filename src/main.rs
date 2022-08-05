@@ -39,46 +39,16 @@ struct WordleData {
 
 impl WordleData {
     fn new(answers: &Vec<String>, guesses: Vec<String>) -> WordleData {
-        let mut frequencies: [(u16, char); 26] = [
-            (0, 'A'), (0, 'B'), (0, 'C'), (0, 'D'), (0, 'E'),
-            (0, 'F'), (0, 'G'), (0, 'H'), (0, 'I'), (0, 'J'),
-            (0, 'K'), (0, 'L'), (0, 'M'), (0, 'N'), (0, 'O'),
-            (0, 'P'), (0, 'Q'), (0, 'R'), (0, 'S'), (0, 'T'),
-            (0, 'U'), (0, 'V'), (0, 'W'), (0, 'X'), (0, 'Y'),
-            (0, 'Z')
-        ];
-        let mut positional_frequencies: [[(u16, char); 26]; 5] = [
-            [(0, 'A'), (0, 'B'), (0, 'C'), (0, 'D'), (0, 'E'),
-            (0, 'F'), (0, 'G'), (0, 'H'), (0, 'I'), (0, 'J'),
-            (0, 'K'), (0, 'L'), (0, 'M'), (0, 'N'), (0, 'O'),
-            (0, 'P'), (0, 'Q'), (0, 'R'), (0, 'S'), (0, 'T'),
-            (0, 'U'), (0, 'V'), (0, 'W'), (0, 'X'), (0, 'Y'),
-            (0, 'Z')],
-            [(0, 'A'), (0, 'B'), (0, 'C'), (0, 'D'), (0, 'E'),
-            (0, 'F'), (0, 'G'), (0, 'H'), (0, 'I'), (0, 'J'),
-            (0, 'K'), (0, 'L'), (0, 'M'), (0, 'N'), (0, 'O'),
-            (0, 'P'), (0, 'Q'), (0, 'R'), (0, 'S'), (0, 'T'),
-            (0, 'U'), (0, 'V'), (0, 'W'), (0, 'X'), (0, 'Y'),
-            (0, 'Z')],
-            [(0, 'A'), (0, 'B'), (0, 'C'), (0, 'D'), (0, 'E'),
-            (0, 'F'), (0, 'G'), (0, 'H'), (0, 'I'), (0, 'J'),
-            (0, 'K'), (0, 'L'), (0, 'M'), (0, 'N'), (0, 'O'),
-            (0, 'P'), (0, 'Q'), (0, 'R'), (0, 'S'), (0, 'T'),
-            (0, 'U'), (0, 'V'), (0, 'W'), (0, 'X'), (0, 'Y'),
-            (0, 'Z')],
-            [(0, 'A'), (0, 'B'), (0, 'C'), (0, 'D'), (0, 'E'),
-            (0, 'F'), (0, 'G'), (0, 'H'), (0, 'I'), (0, 'J'),
-            (0, 'K'), (0, 'L'), (0, 'M'), (0, 'N'), (0, 'O'),
-            (0, 'P'), (0, 'Q'), (0, 'R'), (0, 'S'), (0, 'T'),
-            (0, 'U'), (0, 'V'), (0, 'W'), (0, 'X'), (0, 'Y'),
-            (0, 'Z')],
-            [(0, 'A'), (0, 'B'), (0, 'C'), (0, 'D'), (0, 'E'),
-            (0, 'F'), (0, 'G'), (0, 'H'), (0, 'I'), (0, 'J'),
-            (0, 'K'), (0, 'L'), (0, 'M'), (0, 'N'), (0, 'O'),
-            (0, 'P'), (0, 'Q'), (0, 'R'), (0, 'S'), (0, 'T'),
-            (0, 'U'), (0, 'V'), (0, 'W'), (0, 'X'), (0, 'Y'),
-            (0, 'Z')]
-        ];
+        let mut frequencies: [(u16, char); 26] = Default::default();
+        for i in 0..26 {
+            frequencies[i] = (0, (b'A' + i as u8) as char);
+        }
+        let mut positional_frequencies: [[(u16, char); 26]; 5] = Default::default();
+        for i in 0..5 {
+            for j in 0..26 {
+                positional_frequencies[i][j] = (0, (b'A' + j as u8) as char);
+            }
+        }
 
         for word in answers {
             for (position,c) in word.to_uppercase().chars().enumerate() {
@@ -91,15 +61,8 @@ impl WordleData {
 
         frequencies.sort_by(|a,b| b.0.cmp(&a.0));
         let l = frequencies.map(|a| a.1);
-        println!("{:?}", l);
 
-        let mut positional_letters:[[char;26];5] = [
-            ['A', 'A', 'A', 'A', 'A', 'A', 'A', 'A', 'A', 'A', 'A', 'A', 'A', 'A', 'A', 'A', 'A', 'A', 'A', 'A', 'A', 'A', 'A', 'A', 'A', 'A'],
-            ['A', 'A', 'A', 'A', 'A', 'A', 'A', 'A', 'A', 'A', 'A', 'A', 'A', 'A', 'A', 'A', 'A', 'A', 'A', 'A', 'A', 'A', 'A', 'A', 'A', 'A'],
-            ['A', 'A', 'A', 'A', 'A', 'A', 'A', 'A', 'A', 'A', 'A', 'A', 'A', 'A', 'A', 'A', 'A', 'A', 'A', 'A', 'A', 'A', 'A', 'A', 'A', 'A'],
-            ['A', 'A', 'A', 'A', 'A', 'A', 'A', 'A', 'A', 'A', 'A', 'A', 'A', 'A', 'A', 'A', 'A', 'A', 'A', 'A', 'A', 'A', 'A', 'A', 'A', 'A'],
-            ['A', 'A', 'A', 'A', 'A', 'A', 'A', 'A', 'A', 'A', 'A', 'A', 'A', 'A', 'A', 'A', 'A', 'A', 'A', 'A', 'A', 'A', 'A', 'A', 'A', 'A']
-        ];
+        let mut positional_letters:[[char;26];5] = Default::default();
         for index in 0..5 {
             let mut position = positional_frequencies[index];
             position.sort_by(|a,b| b.0.cmp(&a.0));
