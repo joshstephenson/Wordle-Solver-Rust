@@ -13,9 +13,9 @@ fn lines_from_file(filename: impl AsRef<Path>) -> Vec<String> {
 }
 
 fn load_words(include_guesses: bool) -> Vec<String> {
-    let mut answers = lines_from_file("nyt-answers.txt");
+    let mut answers = lines_from_file("../data/nyt-answers.txt");
     if include_guesses {
-        let mut guesses = lines_from_file("nyt-guesses.txt");
+        let mut guesses = lines_from_file("../data/nyt-guesses.txt");
         let mut answer_clone = answers.clone();
         guesses.append(&mut answer_clone);
         return guesses
