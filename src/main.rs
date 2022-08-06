@@ -2,7 +2,8 @@ use std::{
     fs::File,
     io::{prelude::*, BufReader},
     path::Path,
-    collections::HashMap
+    collections::HashMap,
+    fmt,
 };
 
 fn lines_from_file(filename: impl AsRef<Path>) -> Vec<String> {
@@ -22,12 +23,6 @@ fn load_words(include_guesses: bool) -> Vec<String> {
         return guesses.iter().map(|a| a.to_uppercase()).collect();
     }
     answers.iter().map(|a| a.to_uppercase()).collect()
-}
-
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
-struct WordLetter {
-    frequency: u16,
-    letter: char,
 }
 
 #[derive(Debug)]
@@ -134,10 +129,80 @@ impl WordleData {
 
 }
 
+#[derive(Debug)]
+struct Gameplay {
+    target:     String,
+    guesses:    Vec<String>,
+    green:      HashMap<u8, char>,
+    yellow:     Vec<char>,
+    gray:       Vec<char>,
+    used:       Vec<char>
+}
+
+impl Gameplay {
+    fn new(target: String) -> Gameplay {
+        Gameplay {
+            target:     target,
+            guesses:    Vec::new(),
+            green:      HashMap::new(),
+            yellow:     Vec::new(),
+            gray:       Vec::new(),
+            used:       Vec::new(),
+        }
+    }
+
+    fn add_guess(&mut self, guess: String) {
+        self.guesses.push(guess);
+        self.process_last_guess();
+    }
+
+    fn process_last_guess(&mut self) {
+        let last_guess = self.guesses.last().unwrap();
+        for (index, letter) in last_guess.chars().enumerate() {
+            if !self.used.contains(&letter) {
+                self.used.push(letter);
+            }
+
+            if self.target.contains(letter) {
+                if self.target.chars().nth(index).unwrap() == letter {
+                    self.green.insert(index as u8, letter);
+                }else if !self.yellow.contains(&letter) {
+                    self.yellow.push(letter);
+                }
+            }else {
+                self.gray.push(letter);
+            }
+        }
+    }
+}
+
+impl fmt::Display for Gameplay {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let mut word = String::new();
+        for i in 0..5 {
+            if self.green.contains_key(&i) {
+                word.push_str(&self.green[&i].to_string());
+            }else{
+                word.push_str("_");
+            }
+        }
+        write!(f, "WORD: {}\n      +[{}]\n      -[{}]", 
+               word, 
+               self.yellow.iter().collect::<String>(), 
+               self.gray.iter().collect::<String>()
+               )
+    }
+}
+
 fn main() {
 
-    let mut data = WordleData::new(&load_words(false), &load_words(true));
+    let data = WordleData::new(&load_words(false), &load_words(true));
 
-    println!("{:#?}", data.answers);
+//    println!("{:#?}", data.answers);
+    let mut gameplay = Gameplay::new("CHATS".to_string());
+    let guess = "SLATE".to_string();
+    gameplay.add_guess(guess);
+
+    println!("{}", gameplay);
 }
 
