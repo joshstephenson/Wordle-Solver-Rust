@@ -127,6 +127,39 @@ impl WordleData {
         }
     }
 
+    fn filter_from_gameplay(&mut self, gameplay: &Gameplay) {
+        println!("BEFORE: {}", self.answers.len());
+        self.answers.retain( |answer| {
+            for letter in gameplay.yellow.clone() {
+                if !answer.contains(&letter.to_string()) {
+                    return false
+                }
+            } 
+            for letter in gameplay.gray.clone() {
+                if answer.contains(&letter.to_string()) {
+                    return false
+                }
+            }
+            // Do this last because it's more expensive
+            for key in gameplay.green.keys() {
+                if answer.chars().nth(*key as usize) != Some(gameplay.green[key]) {
+                    return false
+                }
+            }
+            return true
+        });
+        println!("AFTER: {}", self.answers.len());
+    }
+
+    fn remove_answer(&mut self, answer: &String) {
+        self.answers.retain( |word| {
+            return !word.eq(&answer.to_string())
+        });
+    }
+
+    fn next_guess(&mut self) -> String {
+        self.answers.first().unwrap().clone()
+    }
 }
 
 #[derive(Debug)]
@@ -151,8 +184,8 @@ impl Gameplay {
         }
     }
 
-    fn add_guess(&mut self, guess: String) {
-        self.guesses.push(guess);
+    fn add_guess(&mut self, guess: &String) {
+        self.guesses.push(guess.to_string());
         self.process_last_guess();
     }
 
@@ -168,11 +201,17 @@ impl Gameplay {
                     self.green.insert(index as u8, letter);
                 }else if !self.yellow.contains(&letter) {
                     self.yellow.push(letter);
+                    self.yellow.sort_unstable();
                 }
             }else {
                 self.gray.push(letter);
+                self.gray.sort_unstable();
             }
         }
+    }
+
+    fn is_solved(&self, data: &WordleData) -> bool {
+        self.guesses.len() > 0 && self.target.eq(self.guesses.last().unwrap())
     }
 }
 
@@ -196,13 +235,31 @@ impl fmt::Display for Gameplay {
 
 fn main() {
 
-    let data = WordleData::new(&load_words(false), &load_words(true));
+    let mut data = WordleData::new(&load_words(false), &load_words(true));
 
-//    println!("{:#?}", data.answers);
-    let mut gameplay = Gameplay::new("CHATS".to_string());
-    let guess = "SLATE".to_string();
-    gameplay.add_guess(guess);
+    let answers = data.answers.clone();
+    for answer in answers {
+        let mut data = WordleData::new(&load_words(false), &load_words(true));
+        let mut gameplay = Gameplay::new(answer.clone());
 
-    println!("{}", gameplay);
+        let mut guess = "SLATE".to_string();
+        while !gameplay.is_solved(&data) {
+            println!("GUESSING: {}", guess);
+            gameplay.add_guess(&guess);
+            data.remove_answer(&guess);
+            if gameplay.is_solved(&data) {
+                println!("ANSWER WAS {}", guess);
+                break;
+            }
+            data.filter_from_gameplay(&gameplay);
+            println!("{}", gameplay);
+            if data.answers.len() < 26 {
+                println!("ANSWERS AVAILABLE: {:?}", data.answers);
+            }else{
+                println!("ANSWERS AVAILABLE: {}", data.answers.len());
+            }
+            guess = data.next_guess();
+        }
+    }
 }
 
