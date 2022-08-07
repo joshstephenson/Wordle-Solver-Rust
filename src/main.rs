@@ -72,6 +72,7 @@ impl WordleData {
             position.sort_unstable_by(|a,b| b.0.cmp(&a.0));
             positional_letters[index] = position.map(|a| a.1);
         }
+//        println!("{:?}", positional_frequencies);
 
         // Calculate answer scores based on positional letter frequencies
         let mut answers_with_score: Vec<(u16, String)> = Vec::new();
@@ -95,6 +96,7 @@ impl WordleData {
         }
         // Sort by score. Unstable because we have no other order to care about
         answers_with_score.sort_unstable_by(|a,b| b.0.cmp(&a.0));
+//        println!("{:#?}", answers_with_score);
 
         // Calculate guess word score using overall letter frequencies (not positional)
         let mut guesses_with_score: Vec<(u16, String)> = Vec::new();
@@ -128,7 +130,6 @@ impl WordleData {
     }
 
     fn filter_from_gameplay(&mut self, gameplay: &Gameplay) {
-        println!("BEFORE: {}", self.answers.len());
         self.answers.retain( |answer| {
             for letter in gameplay.yellow.clone() {
                 if !answer.contains(&letter.to_string()) {
@@ -148,7 +149,6 @@ impl WordleData {
             }
             return true
         });
-        println!("AFTER: {}", self.answers.len());
     }
 
     fn remove_answer(&mut self, answer: &String) {
@@ -184,9 +184,11 @@ impl Gameplay {
         }
     }
 
-    fn add_guess(&mut self, guess: &String) {
+    fn add_guess(&mut self, guess: &String, data: &mut WordleData) {
         self.guesses.push(guess.to_string());
         self.process_last_guess();
+        data.remove_answer(&guess);
+        data.filter_from_gameplay(self);
     }
 
     fn process_last_guess(&mut self) {
@@ -213,6 +215,10 @@ impl Gameplay {
     fn is_solved(&self, data: &WordleData) -> bool {
         self.guesses.len() > 0 && self.target.eq(self.guesses.last().unwrap())
     }
+
+    fn guess_count(&self) -> usize {
+        self.guesses.len()
+    }
 }
 
 impl fmt::Display for Gameplay {
@@ -225,7 +231,7 @@ impl fmt::Display for Gameplay {
                 word.push_str("_");
             }
         }
-        write!(f, "WORD: {}\n      +[{}]\n      -[{}]", 
+        write!(f, "WORD: {} +[{}] -[{}]", 
                word, 
                self.yellow.iter().collect::<String>(), 
                self.gray.iter().collect::<String>()
@@ -238,28 +244,42 @@ fn main() {
     let mut data = WordleData::new(&load_words(false), &load_words(true));
 
     let answers = data.answers.clone();
+    let mut avg:f64 = 0.0;
+    let mut answer_count: usize = 0;
+    let mut guess_count_total = 0;
+    let mut results: HashMap<usize, Vec<String>> = HashMap::new();
+    let mut stats: HashMap<usize, usize> = HashMap::new();
     for answer in answers {
+        answer_count += 1;
         let mut data = WordleData::new(&load_words(false), &load_words(true));
         let mut gameplay = Gameplay::new(answer.clone());
 
         let mut guess = "SLATE".to_string();
         while !gameplay.is_solved(&data) {
-            println!("GUESSING: {}", guess);
-            gameplay.add_guess(&guess);
-            data.remove_answer(&guess);
+            gameplay.add_guess(&guess, &mut data);
             if gameplay.is_solved(&data) {
-                println!("ANSWER WAS {}", guess);
+                let guess_count = gameplay.guess_count();
+                guess_count_total += guess_count;
+
+                // Keep track of words solved in various guess counts
+                let result = results.entry(guess_count).or_insert(vec![]);
+                result.push(answer);
+                let stats = stats.entry(guess_count).or_insert(0);
+                *stats += 1;
+
                 break;
             }
-            data.filter_from_gameplay(&gameplay);
-            println!("{}", gameplay);
             if data.answers.len() < 26 {
-                println!("ANSWERS AVAILABLE: {:?}", data.answers);
+//                println!("ANSWERS AVAILABLE: {:?}", data.answers);
             }else{
-                println!("ANSWERS AVAILABLE: {}", data.answers.len());
+//                println!("ANSWERS AVAILABLE: {}", data.answers.len());
             }
             guess = data.next_guess();
         }
     }
+    avg = guess_count_total as f64 / answer_count as f64;
+    println!("Results:\n{:#?}", results);
+    println!("Stats:\n{:#?}", stats);
+    println!("Solved all {} words in {} (AVG).", answer_count, avg);
 }
 
