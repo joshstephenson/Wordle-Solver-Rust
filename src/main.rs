@@ -131,8 +131,11 @@ impl WordleData {
 
     fn filter_from_gameplay(&mut self, gameplay: &Gameplay) {
         self.answers.retain( |answer| {
-            for letter in gameplay.yellow.clone() {
-                if !answer.contains(&letter.to_string()) {
+            for index in gameplay.yellow.keys() {
+                let letter = gameplay.yellow[index];
+                // if the potential answer doesn't have a yellow char or has a yellow char in the
+                // same spot we tried it already
+                if !answer.contains(&letter.to_string())  || letter.eq(&answer.chars().nth((*index).into()).unwrap()) {
                     return false
                 }
             } 
@@ -149,16 +152,34 @@ impl WordleData {
             }
             return true
         });
+
+        self.guesses.retain( |guess| {
+            for letter in gameplay.used.clone() {
+                if guess.contains(&letter.to_string()) {
+                    return false
+                }
+            }
+            return true
+        });
     }
 
     fn remove_answer(&mut self, answer: &String) {
+        self.guesses.retain( |word| {
+            return !word.eq(&answer.to_string())
+        });
         self.answers.retain( |word| {
             return !word.eq(&answer.to_string())
         });
     }
 
-    fn next_guess(&mut self) -> String {
-        self.answers.first().unwrap().clone()
+    fn next_guess(&mut self, gameplay: &Gameplay) -> String {
+//        if gameplay.guess_count() == 0 || self.answers.len() < 3 {
+            self.answers.first().unwrap().clone()
+//        }else if self.guesses.len() > 0 {
+//            self.guesses.first().unwrap().clone()
+//        } else {
+//            self.answers.first().unwrap().clone()
+//        }
     }
 }
 
@@ -167,7 +188,7 @@ struct Gameplay {
     target:     String,
     guesses:    Vec<String>,
     green:      HashMap<u8, char>,
-    yellow:     Vec<char>,
+    yellow:     HashMap<u8, char>,
     gray:       Vec<char>,
     used:       Vec<char>
 }
@@ -178,7 +199,7 @@ impl Gameplay {
             target:     target,
             guesses:    Vec::new(),
             green:      HashMap::new(),
-            yellow:     Vec::new(),
+            yellow:     HashMap::new(),
             gray:       Vec::new(),
             used:       Vec::new(),
         }
@@ -201,9 +222,8 @@ impl Gameplay {
             if self.target.contains(letter) {
                 if self.target.chars().nth(index).unwrap() == letter {
                     self.green.insert(index as u8, letter);
-                }else if !self.yellow.contains(&letter) {
-                    self.yellow.push(letter);
-                    self.yellow.sort_unstable();
+                }else {
+                    self.yellow.insert(index as u8, letter);
                 }
             }else {
                 self.gray.push(letter);
@@ -233,7 +253,7 @@ impl fmt::Display for Gameplay {
         }
         write!(f, "WORD: {} +[{}] -[{}]", 
                word, 
-               self.yellow.iter().collect::<String>(), 
+               self.yellow.values().collect::<String>(), 
                self.gray.iter().collect::<String>()
                )
     }
@@ -263,9 +283,12 @@ fn main() {
 
                 // Keep track of words solved in various guess counts
                 let result = results.entry(guess_count).or_insert(vec![]);
-                result.push(answer);
+                result.push(answer.clone());
                 let stats = stats.entry(guess_count).or_insert(0);
                 *stats += 1;
+
+                avg = guess_count_total as f64 / answer_count as f64;
+                println!("{:.4} {}({}): {:?}", avg, answer.clone(), guess_count, gameplay.guesses);
 
                 break;
             }
@@ -274,12 +297,13 @@ fn main() {
             }else{
 //                println!("ANSWERS AVAILABLE: {}", data.answers.len());
             }
-            guess = data.next_guess();
+            guess = data.next_guess(&gameplay);
         }
     }
     avg = guess_count_total as f64 / answer_count as f64;
     println!("Results:\n{:#?}", results);
     println!("Stats:\n{:#?}", stats);
     println!("Solved all {} words in {} (AVG).", answer_count, avg);
+    println!("Total Words: {}, Total Guess Count: {}", answer_count, guess_count_total);
 }
 
