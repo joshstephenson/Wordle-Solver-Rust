@@ -26,15 +26,22 @@ fn load_words(include_guesses: bool) -> Vec<String> {
 }
 
 #[derive(Debug)]
-struct WordleData {
-    answers: Vec<String>,
-    guesses: Vec<String>,
-    frequencies: [char; 26],
+struct Gameplay {
+    target:     String,
+    guesses:    Vec<String>,
+    green:      HashMap<u8, char>,
+    yellow:     HashMap<u8, char>,
+    gray:       Vec<char>,
+    used:       Vec<char>,
+    answers:    Vec<String>,
+    guessables: Vec<String>,
+    frequencies:[char; 26],
     positional: [[char; 26]; 5],
 }
 
-impl WordleData {
-    fn new(answers: &Vec<String>, guesses: &Vec<String>) -> WordleData {
+impl Gameplay {
+    fn new(target: String, answers: &Vec<String>, guessables: &Vec<String>) -> Gameplay {
+
         // Initialize frequencies which stores each of the 26 English letters and their frequency
         let mut frequencies: [(u16, char); 26] = Default::default();
         for (i,c) in frequencies.iter_mut().zip('A'..='Z') {
@@ -100,7 +107,7 @@ impl WordleData {
 
         // Calculate guess word score using overall letter frequencies (not positional)
         let mut guesses_with_score: Vec<(u16, String)> = Vec::new();
-        for word in guesses {
+        for word in guessables {
             let mut score = 0;
             let mut letter_scores_in_word: HashMap<char, u16> = HashMap::new();
             for c in word.chars() {
@@ -120,81 +127,6 @@ impl WordleData {
         }
         // Sort by score. Unstable because we have no other order to care about
         guesses_with_score.sort_unstable_by(|a,b| b.0.cmp(&a.0));
-
-        WordleData {
-            answers: answers_with_score.into_iter().map(|a| a.1).collect(),
-            guesses: guesses_with_score.into_iter().map(|a| a.1).collect(),
-            frequencies: letter_frequencies,
-            positional: positional_letters,
-        }
-    }
-
-    fn filter_from_gameplay(&mut self, gameplay: &Gameplay) {
-        self.answers.retain( |answer| {
-            for index in gameplay.yellow.keys() {
-                let letter = gameplay.yellow[index];
-                // if the potential answer doesn't have a yellow char or has a yellow char in the
-                // same spot we tried it already
-                if !answer.contains(&letter.to_string())  || letter.eq(&answer.chars().nth((*index).into()).unwrap()) {
-                    return false
-                }
-            } 
-            for letter in gameplay.gray.clone() {
-                if answer.contains(&letter.to_string()) {
-                    return false
-                }
-            }
-            // Do this last because it's more expensive
-            for key in gameplay.green.keys() {
-                if answer.chars().nth(*key as usize) != Some(gameplay.green[key]) {
-                    return false
-                }
-            }
-            return true
-        });
-
-        self.guesses.retain( |guess| {
-            for letter in gameplay.used.clone() {
-                if guess.contains(&letter.to_string()) {
-                    return false
-                }
-            }
-            return true
-        });
-    }
-
-    fn remove_answer(&mut self, answer: &String) {
-        self.guesses.retain( |word| {
-            return !word.eq(&answer.to_string())
-        });
-        self.answers.retain( |word| {
-            return !word.eq(&answer.to_string())
-        });
-    }
-
-    fn next_guess(&mut self, gameplay: &Gameplay) -> String {
-//        if gameplay.guess_count() == 0 || self.answers.len() < 3 {
-            self.answers.first().unwrap().clone()
-//        }else if self.guesses.len() > 0 {
-//            self.guesses.first().unwrap().clone()
-//        } else {
-//            self.answers.first().unwrap().clone()
-//        }
-    }
-}
-
-#[derive(Debug)]
-struct Gameplay {
-    target:     String,
-    guesses:    Vec<String>,
-    green:      HashMap<u8, char>,
-    yellow:     HashMap<u8, char>,
-    gray:       Vec<char>,
-    used:       Vec<char>
-}
-
-impl Gameplay {
-    fn new(target: String) -> Gameplay {
         Gameplay {
             target:     target,
             guesses:    Vec::new(),
@@ -202,14 +134,18 @@ impl Gameplay {
             yellow:     HashMap::new(),
             gray:       Vec::new(),
             used:       Vec::new(),
+            answers: answers_with_score.into_iter().map(|a| a.1).collect(),
+            guessables: guesses_with_score.into_iter().map(|a| a.1).collect(),
+            frequencies: letter_frequencies,
+            positional: positional_letters,
         }
     }
 
-    fn add_guess(&mut self, guess: &String, data: &mut WordleData) {
+    fn add_guess(&mut self, guess: &String) {
         self.guesses.push(guess.to_string());
         self.process_last_guess();
-        data.remove_answer(&guess);
-        data.filter_from_gameplay(self);
+        self.remove_answer(&guess);
+        self.filter_from_gameplay();
     }
 
     fn process_last_guess(&mut self) {
@@ -232,12 +168,58 @@ impl Gameplay {
         }
     }
 
-    fn is_solved(&self, data: &WordleData) -> bool {
+    fn is_solved(&self) -> bool {
         self.guesses.len() > 0 && self.target.eq(self.guesses.last().unwrap())
     }
 
     fn guess_count(&self) -> usize {
         self.guesses.len()
+    }
+
+    fn filter_from_gameplay(&mut self) {
+        self.answers.retain( |answer| {
+            for index in self.yellow.keys() {
+                let letter = self.yellow[index];
+                // if the potential answer doesn't have a yellow char or has a yellow char in the same spot we tried it already
+                if !answer.contains(&letter.to_string())  || letter.eq(&answer.chars().nth((*index).into()).unwrap()) {
+                    return false
+                }
+            } 
+            for letter in self.gray.clone() {
+                if answer.contains(&letter.to_string()) {
+                    return false
+                }
+            }
+            // Do this last because it's more expensive
+            for key in self.green.keys() {
+                if answer.chars().nth(*key as usize) != Some(self.green[key]) {
+                    return false
+                }
+            }
+            return true
+        });
+
+        self.guessables.retain( |guess| {
+            for letter in self.used.clone() {
+                if guess.contains(&letter.to_string()) {
+                    return false
+                }
+            }
+            return true
+        });
+    }
+
+    fn remove_answer(&mut self, answer: &String) {
+        self.guessables.retain( |word| {
+            return !word.eq(&answer.to_string())
+        });
+        self.answers.retain( |word| {
+            return !word.eq(&answer.to_string())
+        });
+    }
+
+    fn next_guess(&mut self) -> String {
+        self.answers.first().unwrap().clone()
     }
 }
 
@@ -260,24 +242,35 @@ impl fmt::Display for Gameplay {
 }
 
 fn main() {
+    let mut gameplay = Gameplay::new("RIPER".to_string(), &load_words(false), &load_words(true));
+    let mut guess = "SLATE".to_string();
+    while !gameplay.is_solved() {
+        gameplay.add_guess(&guess);
+        if gameplay.is_solved() {
+            println!("{}({}): {:?}", gameplay.target.clone(), gameplay.guess_count(), gameplay.guesses);
 
-    let mut data = WordleData::new(&load_words(false), &load_words(true));
+            break;
+        }
+        guess = gameplay.next_guess();
+    }
+}
 
-    let answers = data.answers.clone();
+fn run_all() {
+    let answers = load_words(false);
+    let guesses = load_words(true);
     let mut avg:f64 = 0.0;
     let mut answer_count: usize = 0;
     let mut guess_count_total = 0;
     let mut results: HashMap<usize, Vec<String>> = HashMap::new();
     let mut stats: HashMap<usize, usize> = HashMap::new();
-    for answer in answers {
+    for answer in answers.clone() {
         answer_count += 1;
-        let mut data = WordleData::new(&load_words(false), &load_words(true));
-        let mut gameplay = Gameplay::new(answer.clone());
+        let mut gameplay = Gameplay::new(answer.clone(), &answers, &guesses);
 
         let mut guess = "SLATE".to_string();
-        while !gameplay.is_solved(&data) {
-            gameplay.add_guess(&guess, &mut data);
-            if gameplay.is_solved(&data) {
+        while !gameplay.is_solved() {
+            gameplay.add_guess(&guess);
+            if gameplay.is_solved() {
                 let guess_count = gameplay.guess_count();
                 guess_count_total += guess_count;
 
@@ -292,12 +285,7 @@ fn main() {
 
                 break;
             }
-            if data.answers.len() < 26 {
-//                println!("ANSWERS AVAILABLE: {:?}", data.answers);
-            }else{
-//                println!("ANSWERS AVAILABLE: {}", data.answers.len());
-            }
-            guess = data.next_guess(&gameplay);
+            guess = gameplay.next_guess();
         }
     }
     avg = guess_count_total as f64 / answer_count as f64;
