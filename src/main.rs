@@ -5,7 +5,6 @@ use std::env;
 
 fn main() {
     let args: Vec<String> = env::args().collect();
-    let mut target = String::new();
     if args.len() > 1 {
         run_one(args[1].to_uppercase().clone());
     }else {
@@ -15,22 +14,16 @@ fn main() {
 
 fn run_one(target: String) {
     let mut gameplay = Gameplay::new(target.clone(), &load_words(false), &load_words(true));
-    let mut guess = "SLATE".to_string();
     while !gameplay.is_solved() {
+        let guess = gameplay.next_guess();
         gameplay.add_guess(&guess);
-        if gameplay.is_solved() {
-            println!("{}({}): {:?}", target.clone(), gameplay.guess_count(), gameplay.guesses);
-
-            break;
-        }
-        guess = gameplay.next_guess();
     }
+    println!("{}({}): {:?}", target.clone(), gameplay.guess_count(), gameplay.guesses);
 }
 
 fn run_all() {
     let answers = load_words(false);
     let guesses = load_words(true);
-    let mut avg:f64 = 0.0;
     let mut answer_count: usize = 0;
     let mut guess_count_total = 0;
     let mut results: HashMap<usize, Vec<String>> = HashMap::new();
@@ -39,28 +32,23 @@ fn run_all() {
         answer_count += 1;
         let mut gameplay = Gameplay::new(answer.clone(), &answers, &guesses);
 
-        let mut guess = "SLATE".to_string();
         while !gameplay.is_solved() {
+            let guess = gameplay.next_guess();
             gameplay.add_guess(&guess);
-            if gameplay.is_solved() {
-                let guess_count = gameplay.guess_count();
-                guess_count_total += guess_count;
-
-                // Keep track of words solved in various guess counts
-                let result = results.entry(guess_count).or_insert(vec![]);
-                result.push(answer.clone());
-                let stats = stats.entry(guess_count).or_insert(0);
-                *stats += 1;
-
-                avg = guess_count_total as f64 / answer_count as f64;
-                println!("{:.4} {}({}): {:?}", avg, answer.clone(), guess_count, gameplay.guesses);
-
-                break;
-            }
-            guess = gameplay.next_guess();
         }
+        let guess_count = gameplay.guess_count();
+        guess_count_total += guess_count;
+
+        // Keep track of words solved in various guess counts
+        let result = results.entry(guess_count).or_insert(vec![]);
+        result.push(answer.clone());
+        let stats = stats.entry(guess_count).or_insert(0);
+        *stats += 1;
+
+        let avg = guess_count_total as f64 / answer_count as f64;
+        println!("{:.4} {}({}): {:?}", avg, answer.clone(), guess_count, gameplay.guesses);
     }
-    avg = guess_count_total as f64 / answer_count as f64;
+    let avg = guess_count_total as f64 / answer_count as f64;
     println!("Results:\n{:#?}", results);
     println!("Stats:\n{:#?}", stats);
     println!("Solved all {} words in {} (AVG).", answer_count, avg);
