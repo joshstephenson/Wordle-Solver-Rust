@@ -1,9 +1,19 @@
 use wordle::play::Gameplay;
 use wordle::help::load_words;
 use std::collections::HashMap;
+use std::env;
 
 fn main() {
-    let target = "RIPER".to_string();
+    let args: Vec<String> = env::args().collect();
+    let mut target = String::new();
+    if args.len() > 1 {
+        run_one(args[1].to_uppercase().clone());
+    }else {
+        run_all();
+    }
+}
+
+fn run_one(target: String) {
     let mut gameplay = Gameplay::new(target.clone(), &load_words(false), &load_words(true));
     let mut guess = "SLATE".to_string();
     while !gameplay.is_solved() {
