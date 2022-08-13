@@ -26,4 +26,9 @@ mod tests {
     fn rider_takes_6_guesses() {
         assert_eq!(score_for("rider"), 6);
     }
+
+    #[test]
+    fn graze_takes_6_guesses_or_less() {
+        assert!(score_for("graze") <= 6);
+    }
 }
