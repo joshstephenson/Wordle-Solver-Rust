@@ -106,7 +106,7 @@ impl Gameplay {
         // Sort by score. Unstable because we have no other order to care about
         guesses_with_score.sort_unstable_by(|a,b| b.0.cmp(&a.0));
         Gameplay {
-            target:     target,
+            target:     target.to_uppercase(),
             guesses:    Vec::new(),
             green:      HashMap::new(),
             yellow:     HashMap::new(),
@@ -163,7 +163,7 @@ impl Gameplay {
                     return false
                 }
             } 
-            for letter in self.gray.clone() {
+            for letter in &self.gray {
                 if answer.contains(&letter.to_string()) {
                     return false
                 }
@@ -178,7 +178,7 @@ impl Gameplay {
         });
 
         self.guessables.retain( |guess| {
-            for letter in self.used.clone() {
+            for letter in &self.used {
                 if guess.contains(&letter.to_string()) {
                     return false
                 }
