@@ -14,7 +14,7 @@ mod tests {
             guess = gameplay.next_guess();
             gameplay.add_guess(&guess);
         }
-        gameplay.guess_count()
+        gameplay.guess_count
     }
 
     #[test]

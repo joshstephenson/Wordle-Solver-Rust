@@ -23,8 +23,8 @@ pub fn load_words(include_guesses: bool) -> Vec<String> {
         buf.push("data/nyt-guesses.txt");
         path = Path::new(&buf);
         let mut guesses = lines_from_file(path);
-        let mut answer_clone = answers.clone();
-        guesses.append(&mut answer_clone);
+//        let mut answer_clone = answers.clone();
+//        guesses.append(&mut answer_clone);
         return guesses.iter().map(|a| a.to_uppercase()).collect();
     }
     answers.iter().map(|a| a.to_uppercase()).collect()

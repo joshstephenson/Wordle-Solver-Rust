@@ -1,23 +1,42 @@
 use std::{
     collections::HashMap,
     fmt,
+    cmp::Ordering,
 };
 
 #[derive(Debug)]
 pub struct Gameplay {
-    target:     String,
+    pub target:     String,
     pub guesses:    Vec<String>,
+    pub guess_count: usize,
     green:      HashMap<u8, char>,
     yellow:     HashMap<u8, char>,
     gray:       Vec<char>,
     used:       Vec<char>,
-    answers:    Vec<String>,
-    guessables: Vec<String>,
-    frequencies:[char; 26],
-    positional: [[char; 26]; 5],
+    pub answers:    Vec<String>,
+    pub guessables: Vec<String>,
+//    frequencies:[char; 26],
+//    positional: [[char; 26]; 5],
 }
 
 impl Gameplay {
+
+    pub fn clone_for_next_guess(&self, answer: &String) -> Gameplay {
+        let mut clone = Gameplay {
+            target:     self.target.clone(),
+            guesses:    self.guesses.clone(),
+            guess_count: self.guess_count,
+            green:      self.green.clone(),
+            yellow:     self.yellow.clone(),
+            gray:       self.gray.clone(),
+            used:       self.used.clone(),
+            answers:    self.answers.clone(),
+            guessables: self.guessables.clone(),
+        };
+        clone.add_guess(answer);
+        clone
+    }
+
     pub fn new(target: String, answers: &Vec<String>, guessables: &Vec<String>) -> Gameplay {
 
         // Initialize frequencies which stores each of the 26 English letters and their frequency
@@ -108,19 +127,21 @@ impl Gameplay {
         Gameplay {
             target:     target.to_uppercase(),
             guesses:    Vec::new(),
+            guess_count: 0,
             green:      HashMap::new(),
             yellow:     HashMap::new(),
             gray:       Vec::new(),
             used:       Vec::new(),
             answers: answers_with_score.into_iter().map(|a| a.1).collect(),
             guessables: guesses_with_score.into_iter().map(|a| a.1).collect(),
-            frequencies: letter_frequencies,
-            positional: positional_letters,
+//            frequencies: letter_frequencies,
+//            positional: positional_letters,
         }
     }
 
     pub fn add_guess(&mut self, guess: &String) {
         self.guesses.push(guess.to_string());
+        self.guess_count += 1;
         self.process_last_guess();
         self.remove_answer(&guess);
         self.filter_from_gameplay();
@@ -148,10 +169,6 @@ impl Gameplay {
 
     pub fn is_solved(&self) -> bool {
         self.guesses.len() > 0 && self.target.eq(self.guesses.last().unwrap())
-    }
-
-    pub fn guess_count(&self) -> usize {
-        self.guesses.len()
     }
 
     fn filter_from_gameplay(&mut self) {
@@ -219,3 +236,23 @@ impl fmt::Display for Gameplay {
     }
 }
 
+impl Ord for Gameplay {
+    fn cmp(&self, other: &Self) -> Ordering {
+        other.guess_count.cmp(&self.guess_count)
+            .then_with(|| self.answers.len().cmp(&other.answers.len()))
+    }
+}
+
+impl PartialOrd for Gameplay {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl PartialEq for Gameplay {
+    fn eq(&self, other: &Self) -> bool {
+        self.guess_count == other.guess_count
+    }
+}
+impl Eq for Gameplay {
+}
