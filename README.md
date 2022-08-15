@@ -14,7 +14,7 @@ The focus of this project is to find the lower bound average solution rate for a
 * [Python Wordle Solver](https://github.com/joshstephenson/Wordle-Solver)
 
 ## Results
-The lower bound of the overwhelming majority of words is 3 guesses per word. 28 can be resolved in 2, 23 in 4, and 5 require 5 guesses (`EATER`, `PENAL`, `STILL`, `TRUSS`, `UNTIL`). Slate which is the starting word is resolved in 1 of course.
+The lower bound of the overwhelming majority of words is 3 guesses per word. 28 can be resolved in 2, 23 in 4, and 5 require 5 guesses (`EATER`, `PENAL`, `STILL`, `TRUSS`, `UNTIL`). `SLATE` which is the starting word is resolved in 1 of course.
 ![results-SLATE](https://user-images.githubusercontent.com/11002/184703834-306f5251-9ce4-49f4-a564-0bf62d1b7ade.png)
 
 
