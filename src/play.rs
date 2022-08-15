@@ -39,6 +39,7 @@ impl Gameplay {
 
     pub fn new(target: String, answers: &Vec<String>, guessables: &Vec<String>) -> Gameplay {
 
+
         // Initialize frequencies which stores each of the 26 English letters and their frequency
         let mut frequencies: [(u16, char); 26] = Default::default();
         for (i,c) in frequencies.iter_mut().zip('A'..='Z') {
@@ -67,7 +68,7 @@ impl Gameplay {
         // or if we log and want to make sure its right. Unstable because
         // there really is no reason why we should preserve alphabetic order
         frequencies.sort_unstable_by(|a,b| b.0.cmp(&a.0));
-        let letter_frequencies = frequencies.map(|a| a.1);
+//        let letter_frequencies = frequencies.map(|a| a.1);
 
         let mut positional_letters:[[char;26];5] = Default::default();
         for index in 0..5 {
@@ -76,7 +77,6 @@ impl Gameplay {
             position.sort_unstable_by(|a,b| b.0.cmp(&a.0));
             positional_letters[index] = position.map(|a| a.1);
         }
-//        println!("{:?}", positional_frequencies);
 
         // Calculate answer scores based on positional letter frequencies
         let mut answers_with_score: Vec<(u16, String)> = Vec::new();
@@ -100,11 +100,15 @@ impl Gameplay {
         }
         // Sort by score. Unstable because we have no other order to care about
         answers_with_score.sort_unstable_by(|a,b| b.0.cmp(&a.0));
-//        println!("{:#?}", answers_with_score);
 
         // Calculate guess word score using overall letter frequencies (not positional)
         let mut guesses_with_score: Vec<(u16, String)> = Vec::new();
         for word in guessables {
+            // remove target word from guessables so we don't accidentally guess it too early
+            if word.eq(&target) {
+                continue;
+            }
+
             let mut score = 0;
             let mut letter_scores_in_word: HashMap<char, u16> = HashMap::new();
             for c in word.chars() {
