@@ -14,8 +14,9 @@ The focus of this project is to find the lower bound average solution rate for a
 * [Python Wordle Solver](https://github.com/joshstephenson/Wordle-Solver)
 
 ## Results
-The lower bound of the overwhelming majority of words is 3 guesses per word. 28 can be done in 2, 23 in 4, and 1 requires 5 guesses (`EATER`). Slate which is the starting word is done in 1 of course.
-![results-SLATE](https://user-images.githubusercontent.com/11002/184561760-3eca0cb5-10ec-4b36-b331-df060bf47030.png)
+The lower bound of the overwhelming majority of words is 3 guesses per word. 28 can be resolved in 2, 23 in 4, and 5 require 5 guesses (`EATER`, `PENAL`, `STILL`, `TRUSS`, `UNTIL`). Slate which is the starting word is resolved in 1 of course.
+![results-SLATE](https://user-images.githubusercontent.com/11002/184703834-306f5251-9ce4-49f4-a564-0bf62d1b7ade.png)
+
 
 ## How it Works
 This algorithm uses:
@@ -35,17 +36,19 @@ It's worth stating that this is a very specific concept of lower bound. Technica
 What I am doing here in this project is never landing on the final answer until all other possible answers have been filtered out by making guesses. Aside from `SLATE`, a word will never accidentally be solved from a lucky guess. All answers have to be revealed by guesses that partion the remaining answers into the most possible subsets. This ensures we are playing by the rules of the game and then revealing a word path for each puzzle that is guaranteed to land on the target word through the filtering of words based on green, yellow and gray letters.
 
 ### Example Word
-Here is a path calculated by this project for `BLINK`: `SLATE, KOMBU, BLINK`. Let's break this down. Before `SLATE` the number of possible answers is 2315. After guessing `SLATE` we would receive the following feedback:
-- Green: `[L]`, Yellow: `[]`, Gray: `[S,A,T,E]`
-This already gives us so much information that the 2315 answers has been pruned down to only 39 words:
+Here is a path calculated by this project for `BLINK`: `SLATE, KOMBU, BLINK`. Let's break this down. Before `SLATE` the number of possible answers is 2315. - After `SLATE` (1 green: [L], 0 yellow, 4 gray: [S,A,T,E]) there are only 39 possible words:
 - `['GLORY', 'CLINK', 'BLIND', 'BLINK', 'BLOND', 'CLING', 'BLOCK', 'FLOUR', 'FLICK', 'FLOCK', 'CLOUD', 'FLING', 'PLUNK', 'CLOWN', 'FLUNK', 'FLOOR', 'CLUNG', 'CLICK', 'FLUID', 'BLOWN', 'PLUCK', 'BLIMP', 'CLOCK', 'CLIMB', 'BLOOD', 'FLOWN', 'FLUNG', 'CLIFF', 'FLOOD', 'BLURB', 'CLUMP', 'CLUCK', 'BLOOM', 'GLOOM', 'PLUMB', 'PLUMP', 'BLUFF', 'GLYPH', 'FLUFF']`
 Out of those words, we see the following letters (ignoring letters we've already guessed in `SLATE`):
 - `{'U': 15, 'C': 15, 'O': 15, 'F': 13, 'N': 13, 'B': 12, 'I': 11, 'K': 11, 'M': 7, 'G': 7, 'P': 7, 'D': 6, 'R': 4, 'W': 3, 'Y': 2, 'H': 1}`
-We see 15 `U`s, 15 `C`s and so on. So we know the next best word needs to have as many of these letters as words from the available guesses can have. If you look at [my other solver](https://github.com/joshstephenson/Wordle-Solver), what I do here is find a word with the most of these letters, favoring letters with the higher numbers, which leads to guessing `BUNCO`. But that's not what we do here. Instead, we just run through all possible choices, and the word this algorithm finds to guess next is `KOMBU`. So what happens after we guess that?
-- Green: `[L]`, Yellow: `[B,K]`, Gray: `[S,A,T,E,O,M,U]`
-This is enough information to filter all 39 remaining words to just one: `BLINK`.
+We see 15 `U`s, 15 `C`s and so on. So we know the next best word needs to have as many of these letters as words from the available guesses can have. If you look at [my other solver](https://github.com/joshstephenson/Wordle-Solver), what I do here is find a word with the most of these letters, favoring letters with the higher numbers, which leads to guessing `BUNCO`. But that's not what we do here. Instead, we just run through all possible choices, and the word this algorithm finds to guess next is `KOMBU`.
+- After guessing `KOMBU` (0 green, 2 yellow: [B,K], 3 gray: [O,M,U]) there is only word remaining that can be matched: `BLINK`.
 
-It appears that all words can reveal the answer with 100% certainty with only 4 guesses, most can do it in 3 and a handful can be done in 2. Of course, it all depends on what word you start with and `SLATE` is a great starting word. `CRANE` and `SALET` are also great starting words.
+**Here is a worst case example:**
+The path for `EATER` is `SLATE, BUMPH, ZINCO, WATER, EATER`. If we walk through this one by one:
+- After `SLATE` (0 green, 3 yellow, 2 gray) there are 25 possible words.
+- After `BUMPH` (0 green, 0 yellow, 5 gray) there are 17 possible words.
+- After `ZINCO` (0 green, 0 yellow, 5 gray) there are still 11 possible words(!).
+- After `WATER` (4 green, 0 yellow, 1 gray) there is only one possible answer: `EATER`.
 
 ## Usage
 Run it on a single word:
