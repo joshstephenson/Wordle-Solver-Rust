@@ -3,35 +3,41 @@ use wordle::help::load_words;
 use std::collections::HashMap;
 use std::collections::BinaryHeap;
 use std::env;
-use std::io;
-use std::io::Write;
 
 fn main() {
     let args: Vec<String> = env::args().collect();
+ 
+    // -s option is to find lower bound for all words in answer file
     if args.len() == 2 {
         if args[1].eq("-s") {
             find_lower_bound();
         }
     }else if args.len() > 2 {
+  
+        // -w option is for running basic solution where top of answers is used as guess. No
+        // shortest path analysis run
         if args[1].eq("-w") {
             run_one(args[2].to_uppercase().clone());
+
+        // -s with a word following runs shortest path on just one word
         } else if args[1].eq("-s") {
             if let Some(gameplay) = find_shortest_for(args[2].to_uppercase().clone()) {
                 println!("({}) {}", gameplay.guess_count, gameplay.guesses.join(", "));
             }
         }
     }else {
+        // like -w but for all words
         run_all();
     }
 }
 
 fn find_shortest_for(word: String) -> Option<Gameplay> {
-    let mut gameplay = Gameplay::new(word, &load_words(false), &load_words(true));
+    let mut start = Gameplay::new(word, &load_words(false), &load_words(true));
     // Start with SLATE
-    gameplay.add_guess(&"SLATE".to_string());
+    start.add_guess(&"SLATE".to_string());
 
     let mut heap: BinaryHeap<Gameplay> = BinaryHeap::new();
-    heap.push(gameplay);
+    heap.push(start);
 
     while let Some(gameplay) = heap.pop() {
         if gameplay.is_solved() {
@@ -39,33 +45,34 @@ fn find_shortest_for(word: String) -> Option<Gameplay> {
         }
         // Until the answer list is pruned to 1, we will use guesses to narrow it down
         // Otherwise we would go straight to the answer in 1 guess every time
-        if gameplay.answers.len() > 1 {
-            for (index, answer) in gameplay.guessables.iter().enumerate() {
+        // The last move should be from the answer list
+        if gameplay.answers.len() == 1 || gameplay.guessables.len() == 0 {
+            let nextmove = gameplay.clone_for_next_guess(&gameplay.answers[0]);
+//            println!("Last move for {}: {}", gameplay.guesses.last().unwrap(), nextmove.guesses.last().unwrap());
+            heap.push(nextmove);
+        }else {
+            for (_, answer) in gameplay.guessables.iter().enumerate() {
                 let nextmove = gameplay.clone_for_next_guess(&answer);
-//                println!("{:4} move from {}: {}", index, gameplay.guesses.last().unwrap(), nextmove.guesses.last().unwrap());
-//                print!(".");
-//                io::stdout().flush().unwrap();
+//                println!("{} move from {}: {}", index, gameplay.guesses.last().unwrap(), nextmove.guesses.last().unwrap());
                 heap.push(nextmove);
             }
-        // The last move should be from the answer list
-        }else{
-            let nextmove = gameplay.clone_for_next_guess(&gameplay.answers[0]);
-            heap.push(nextmove);
         }
     }
     None
 }
 
 fn find_lower_bound() {
-    let g1 = Gameplay::new("DUMMY".to_string(), &load_words(false), &load_words(true));
+    let answers = load_words(false);
     let mut count = 0;
     let mut guess_count = 0;
-    for answer in g1.answers {
+    for answer in answers {
         if let Some(gameplay) = find_shortest_for(answer.clone()) {
             guess_count += gameplay.guess_count;
             count += 1;
             let avg: f64 = (guess_count as f64) / (count as f64);
             println!("({:.4}) {}", avg, gameplay.guesses.join(", "));
+        }else {
+            println!("NO SOLUTION FOUND FOR {}", answer.clone());
         }
     }
 }
