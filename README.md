@@ -13,6 +13,10 @@ This is a Wordle solver that is finds the lowest possible word path for all 2315
 The focus of this project is to find the lower bound average solution rate for all 2315 answer words using dynamic programming. This is different from another solver I wrote which takes a more human-like approach. That project does not use backtracking or dynamic programming and includes an interactive solver that does not use any precomputed or cached data.
 * [Python Wordle Solver](https://github.com/joshstephenson/Wordle-Solver)
 
+## Results
+The lower bound of the overwhelming majority of words is 3 guesses per word. 28 can be done in 2, 23 in 4 and 1 requires 5 guesses (`EATER`). Slate which is the starting word is done in 1.
+![results-SLATE](https://user-images.githubusercontent.com/11002/184561760-3eca0cb5-10ec-4b36-b331-df060bf47030.png)
+
 ## How it Works
 This algorithm uses:
 1. A list of 2315 possible answer words.
