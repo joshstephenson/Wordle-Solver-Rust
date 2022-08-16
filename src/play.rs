@@ -220,6 +220,10 @@ impl Gameplay {
     pub fn next_guess(&mut self) -> String {
         self.answers.first().unwrap().clone()
     }
+
+    pub fn answer_count(&self) -> usize {
+        self.answers.len()
+    }
 }
 
 impl fmt::Display for Gameplay {
