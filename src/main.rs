@@ -199,7 +199,7 @@ fn run_all() {
         *stats += 1;
 
         let avg = guess_count_total as f64 / answer_count as f64;
-        println!("{:.4} {}({}): {:?}", avg, answer.clone(), guess_count, gameplay.guesses);
+        println!("{:.4} {}({}): {}", avg, answer.clone(), guess_count, gameplay.guesses.join(", "));
     }
     let avg = guess_count_total as f64 / answer_count as f64;
     println!("Results:\n{:#?}", results);
