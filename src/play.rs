@@ -15,8 +15,6 @@ pub struct Gameplay {
     used:       Vec<char>,
     pub answers:    Vec<String>,
     pub guessables: Vec<String>,
-//    frequencies:[char; 26],
-//    positional: [[char; 26]; 5],
 }
 
 impl Gameplay {
@@ -38,7 +36,6 @@ impl Gameplay {
     }
 
     pub fn new(target: String, answers: &Vec<String>, guessables: &Vec<String>) -> Gameplay {
-
 
         // Initialize frequencies which stores each of the 26 English letters and their frequency
         let mut frequencies: [(u16, char); 26] = Default::default();
@@ -128,6 +125,7 @@ impl Gameplay {
         }
         // Sort by score. Unstable because we have no other order to care about
         guesses_with_score.sort_unstable_by(|a,b| b.0.cmp(&a.0));
+
         Gameplay {
             target:     target.to_uppercase(),
             guesses:    Vec::new(),
@@ -138,8 +136,6 @@ impl Gameplay {
             used:       Vec::new(),
             answers: answers_with_score.into_iter().map(|a| a.1).collect(),
             guessables: guesses_with_score.into_iter().map(|a| a.1).collect(),
-//            frequencies: letter_frequencies,
-//            positional: positional_letters,
         }
     }
 
