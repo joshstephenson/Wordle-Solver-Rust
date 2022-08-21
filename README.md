@@ -1,5 +1,5 @@
 # Wordle Answers Lower Bound
-This is a Wordle solver that is finds the lowest possible word path for all 2315 Wordle answers from a static starting word.
+This is a Wordle solver that finds the lowest possible word path for all 2315 Wordle answers from a static starting word.
 
 ## What is Wordle?
 [Wordle](https://www.nytimes.com/games/wordle/index.html) is a five letter English word guessing game where the player must guess a target word in six guesses. For each attempt, the player enters a five letter word and receives feedback for each letter:
